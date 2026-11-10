@@ -14,14 +14,14 @@ categories = ["game-development", "multimedia::audio"]
 default = ["bevy_audio"]
 kira = ["dep:kira", "bevy_kira_audio"]
 bevy_audio = ["bevy/bevy_audio", "bevy/wav", "rodio"]
-oddio = ["bevy_oddio"]
+oddio = [] # bevy_oddio not compatible with Bevy 0.20; feature kept but disabled
 
 [dependencies]
-fundsp = "0.20"
+fundsp = "0.23"
 cpal = "0.15"
 once_cell = "1.13"
-rodio = { version = "0.20.1", default-features = false, features = ["wav"], optional = true }
-kira = { version = "0.10.6", default-features = false, features = ["wav"], optional = true }
+rodio = { version = "0.22", default-features = false, features = ["wav"], optional = true }
+kira = { version = "0.12.1", default-features = false, features = ["wav"], optional = true }
 
 [dependencies.uuid]
 version = "1.1"
@@ -31,31 +31,32 @@ features = [
 
 [dependencies.bevy]
 # git = "https://github.com/bevyengine/bevy"
-version = "0.16"
-default-features = false 
+version = "0.20"
+default-features = false
 features = ["bevy_asset", "bevy_log"]
 
 [dependencies.bevy_kira_audio]
 # git = "https://github.com/NiklasEi/bevy_kira_audio.git"
 # branch = "bevy_main"
-version = "0.23"
+version = "0.27.1"
 default-features = false
 features = ["wav"]
 optional = true
 
-[dependencies.bevy_oddio]
-# git = "https://github.com/harudagondi/bevy_oddio"
-# branch = "bevy_main"
-version = "0.5"
-default-features = false
-optional = true
-features = ["wav"]
+# bevy_oddio has not been updated past Bevy 0.11 and is incompatible with Bevy 0.20.
+# The `oddio` feature is disabled. Code is preserved for future use.
+# [dependencies.bevy_oddio]
+# version = "0.5"
+# default-features = false
+# optional = true
+# features = ["wav"]
 
 [dev-dependencies.bevy]
 # git = "https://github.com/bevyengine/bevy"
-version = "0.16"
+version = "0.20"
 default-features = false
 features = [
+  "bevy_audio",
   "bevy_core_pipeline",
   "bevy_pbr",
   "bevy_gltf",
@@ -63,12 +64,13 @@ features = [
   "bevy_sprite",
   "bevy_text",
   "bevy_ui",
-  "animation",
+  "bevy_animation",
   "bevy_winit",
   "bevy_gilrs",
   "png",
   "hdr",
-  "x11"
+  "x11",
+  "wav"
 ]
 
 [[example]]

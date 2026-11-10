@@ -171,7 +171,7 @@ fn default_sample_rate() -> f32 {
 
 /// Prelude for all `bevy_procedural_audio` types.
 ///
-/// This also includes the `fundsp::hacker32` prelude.
+/// This also includes the `fundsp::prelude32` prelude.
 pub mod prelude {
   pub use {
     crate::{
@@ -191,7 +191,7 @@ pub mod prelude {
       DspAppExt,
       DspPlugin,
     },
-    fundsp::hacker32::*,
+    fundsp::prelude32::*,
   };
 }
 

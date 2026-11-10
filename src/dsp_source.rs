@@ -176,7 +176,7 @@ mod tests {
     use {
         super::{DspSource, SourceType},
         crate::DEFAULT_SAMPLE_RATE,
-        fundsp::hacker32::*,
+        fundsp::prelude32::*,
     };
 
     #[test]

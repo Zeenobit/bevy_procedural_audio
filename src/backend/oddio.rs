@@ -1,4 +1,9 @@
 //! Implementation to integrate `bevy_procedural_audio` into `bevy_oddio`.
+//!
+//! **Note:** `bevy_oddio` has not been updated past Bevy 0.11 and is incompatible
+//! with Bevy 0.20. This feature is currently disabled.
+
+compile_error!("`bevy_oddio` does not support Bevy 0.20. The `oddio` feature is currently unavailable.");
 
 use {
     super::{Backend, DspAudioExt},

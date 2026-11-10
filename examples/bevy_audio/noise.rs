@@ -14,7 +14,7 @@ fn main() {
 }
 
 fn white_noise() -> impl AudioUnit {
-    white() >> split::<U2>() * 0.2
+    white() * lfo(|t: f32| exp(-t)) >> split::<U2>() * 0.2
 }
 
 fn play_noise(

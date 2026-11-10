@@ -15,7 +15,6 @@ pub struct BevyAudioBackend;
 
 impl Decodable for DspSource {
     type Decoder = IterMono;
-    type DecoderItem = f32;
 
     fn decoder(&self) -> Self::Decoder {
         self.clone().into_iter().into_mono()
@@ -23,17 +22,17 @@ impl Decodable for DspSource {
 }
 
 impl rodio::Source for IterMono {
-    fn current_frame_len(&self) -> Option<usize> {
+    fn current_span_len(&self) -> Option<usize> {
         None
     }
 
-    fn channels(&self) -> u16 {
-        1
+    fn channels(&self) -> std::num::NonZero<u16> {
+        std::num::NonZero::new(1).unwrap()
     }
 
     #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
-    fn sample_rate(&self) -> u32 {
-        self.0.sample_rate as u32
+    fn sample_rate(&self) -> std::num::NonZero<u32> {
+        std::num::NonZero::new(self.0.sample_rate as u32).unwrap()
     }
 
     fn total_duration(&self) -> Option<std::time::Duration> {
