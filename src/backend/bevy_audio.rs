@@ -2,11 +2,12 @@
 
 use {
     super::Backend,
-    crate::dsp_source::{DspSource, IterMono},
+    crate::dsp_source::{DspSource, IterMono, SourceType},
     bevy::{
         audio::AddAudioSource,
         prelude::{App, AudioSource, Decodable},
     },
+    std::time::Duration,
 };
 
 /// The backend for `bevy_audio`.
@@ -14,16 +15,56 @@ use {
 pub struct BevyAudioBackend;
 
 impl Decodable for DspSource {
-    type Decoder = IterMono;
+    type Decoder = DspDecoder;
 
+    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
     fn decoder(&self) -> Self::Decoder {
-        self.clone().into_iter().into_mono()
+        let (remaining, total_duration) = match self.source_type {
+            SourceType::Static { duration } => (
+                Some((duration * self.sample_rate).round() as usize),
+                Some(Duration::from_secs_f32(duration)),
+            ),
+            SourceType::Dynamic => (None, None),
+        };
+
+        DspDecoder {
+            iter: self.clone().into_iter().into_mono(),
+            remaining,
+            total_duration,
+        }
     }
 }
 
-impl rodio::Source for IterMono {
+/// The `rodio` source used to play a [`DspSource`] through `bevy_audio`.
+///
+/// Static sources end after their duration, which lets the sink run empty
+/// so that `PlaybackSettings` such as `DESPAWN` and `REMOVE` take effect.
+/// Dynamic sources never end.
+pub struct DspDecoder {
+    iter: IterMono,
+    /// Samples left to play, or `None` if the source is dynamic.
+    remaining: Option<usize>,
+    total_duration: Option<Duration>,
+}
+
+impl Iterator for DspDecoder {
+    type Item = f32;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(remaining) = &mut self.remaining {
+            if *remaining == 0 {
+                return None;
+            }
+            *remaining -= 1;
+        }
+
+        self.iter.next()
+    }
+}
+
+impl rodio::Source for DspDecoder {
     fn current_span_len(&self) -> Option<usize> {
-        None
+        self.remaining
     }
 
     fn channels(&self) -> std::num::NonZero<u16> {
@@ -32,11 +73,11 @@ impl rodio::Source for IterMono {
 
     #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
     fn sample_rate(&self) -> std::num::NonZero<u32> {
-        std::num::NonZero::new(self.0.sample_rate as u32).unwrap()
+        std::num::NonZero::new(self.iter.0.sample_rate as u32).unwrap()
     }
 
-    fn total_duration(&self) -> Option<std::time::Duration> {
-        None
+    fn total_duration(&self) -> Option<Duration> {
+        self.total_duration
     }
 }
 
@@ -53,6 +94,43 @@ impl Backend for BevyAudioBackend {
         let bytes = dsp_source.to_bytes().into();
 
         AudioSource { bytes }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(clippy::wildcard_imports)]
+
+    use {
+        super::*,
+        crate::DEFAULT_SAMPLE_RATE,
+        fundsp::prelude32::*,
+        rodio::Source,
+    };
+
+    #[test]
+    fn static_source_ends() {
+        let source = DspSource::new(
+            || constant(1.0),
+            *DEFAULT_SAMPLE_RATE,
+            SourceType::Static { duration: 0.5 },
+        );
+
+        let decoder = source.decoder();
+        assert_eq!(decoder.total_duration(), Some(Duration::from_secs_f32(0.5)));
+
+        #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+        let expected = (0.5 * *DEFAULT_SAMPLE_RATE).round() as usize;
+        assert_eq!(decoder.count(), expected);
+    }
+
+    #[test]
+    fn dynamic_source_does_not_end() {
+        let source = DspSource::new(|| constant(1.0), *DEFAULT_SAMPLE_RATE, SourceType::Dynamic);
+
+        let decoder = source.decoder();
+        assert_eq!(decoder.total_duration(), None);
+        assert_eq!(decoder.take(100_000).count(), 100_000);
     }
 }
 
