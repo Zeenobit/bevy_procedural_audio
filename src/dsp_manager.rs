@@ -1,22 +1,16 @@
 //! Module for [`DspManager`].
 
 use bevy::{
-  platform::collections::HashMap,
-  prelude::{
-    default,
-    Resource,
-  },
+    platform::collections::HashMap,
+    prelude::{Resource, default},
 };
-  
+
 use uuid::Uuid;
 
 use crate::{
-  dsp_graph::DspGraph,
-  dsp_source::{
-    DspSource,
-    SourceType,
-  },
-  DEFAULT_SAMPLE_RATE,
+    DEFAULT_SAMPLE_RATE,
+    dsp_graph::DspGraph,
+    dsp_source::{DspSource, SourceType},
 };
 
 /// Manages the registered DSP sources.
@@ -43,11 +37,11 @@ impl DspManager {
         }
     }
 
-    pub(crate) fn add_graph<D: DspGraph>(&mut self, dsp_graph: D, source_type: SourceType) {
-        self.collection.insert(
-            dsp_graph.id(),
-            DspSource::new(dsp_graph, self.sample_rate, source_type),
-        );
+    pub fn add_graph<D: DspGraph>(&mut self, dsp_graph: D, source_type: SourceType) -> DspSource {
+        let id = dsp_graph.id();
+        let source = DspSource::new(dsp_graph, self.sample_rate, source_type);
+        self.collection.insert(id, source.clone());
+        source
     }
 
     /// Get the DSP source given a DSP graph.
